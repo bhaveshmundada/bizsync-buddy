@@ -112,7 +112,7 @@ function RootComponent() {
         <CompanyProvider>
           <AuthRefetcher />
           <Outlet />
-          <Toaster position="top-right" />
+          <Toaster position="top-right" richColors closeButton expand />
         </CompanyProvider>
       </AuthProvider>
     </QueryClientProvider>

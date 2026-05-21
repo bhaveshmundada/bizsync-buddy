@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
+import { useCountUp } from "@/hooks/useCountUp";
+import { formatINR } from "@/lib/format";
 
 export function MetricCard({
   label,
@@ -8,12 +10,18 @@ export function MetricCard({
   hint,
   tone = "default",
   sub,
+  index = 0,
+  animateNumber,
+  format = "inr",
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
   tone?: "default" | "success" | "danger" | "warning" | "info" | "partner";
   sub?: ReactNode;
+  index?: number;
+  animateNumber?: number;
+  format?: "inr" | "number" | "percent";
 }) {
   const accent =
     tone === "success"
@@ -27,8 +35,22 @@ export function MetricCard({
             : tone === "partner"
               ? "text-purple-700"
               : "text-gray-900";
+
+  const counted = useCountUp(typeof animateNumber === "number" ? animateNumber : 0, 400);
+  const displayValue =
+    typeof animateNumber === "number"
+      ? format === "inr"
+        ? formatINR(Math.round(counted))
+        : format === "percent"
+          ? `${counted.toFixed(1)}%`
+          : Math.round(counted).toLocaleString("en-IN")
+      : value;
+
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5 transition-shadow hover:shadow-sm">
+    <div
+      className="rx-fade-in rounded-xl border border-gray-100 bg-white p-5 transition-shadow hover:shadow-sm"
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-gray-400">{label}</span>
         {hint && (
@@ -44,7 +66,7 @@ export function MetricCard({
           </TooltipProvider>
         )}
       </div>
-      <div className={`mt-2 text-2xl font-semibold tabular-nums ${accent}`}>{value}</div>
+      <div className={`mt-2 text-2xl font-semibold tabular-nums ${accent}`}>{displayValue}</div>
       {sub && <div className="mt-1 text-xs text-gray-500">{sub}</div>}
     </div>
   );
