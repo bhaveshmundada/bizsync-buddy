@@ -9,6 +9,7 @@ import { useCompanyRecords } from "@/hooks/useCompanyRecords";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { relativeTime } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
+import { InsightsSection } from "@/components/InsightsSection";
 import { Activity } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
