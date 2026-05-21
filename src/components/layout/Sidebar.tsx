@@ -21,7 +21,8 @@ import { FINANCIAL_YEARS } from "@/lib/months";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-export const NAV_ITEMS = [
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/income", label: "Income", icon: IndianRupee },
   { to: "/expenses", label: "Expenses", icon: Receipt },
@@ -30,7 +31,7 @@ export const NAV_ITEMS = [
   { to: "/tools", label: "Tools & SaaS", icon: Wrench },
   { to: "/pnl", label: "Monthly P&L", icon: TrendingUp },
   { to: "/health", label: "Health check", icon: HeartPulse },
-] as const;
+];
 
 export function Sidebar() {
   const { currentCompany, financialYear, setFinancialYear } = useCompany();
