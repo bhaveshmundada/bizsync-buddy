@@ -119,3 +119,19 @@
     color: #111827;
   }
 }
+
+@keyframes rx-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes rx-row-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rx-fade-in {
+  opacity: 0;
+  animation: rx-fade-in 0.35s ease-out forwards;
+}
+.rx-row-in {
+  animation: rx-row-in 0.25s ease-out;
+}
