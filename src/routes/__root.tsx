@@ -70,6 +70,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "RevenueX Financial Command Center" },
       { name: "description", content: "Multi-company financial management for agency founders" },
+      { property: "og:title", content: "RevenueX Financial Command Center" },
+      { name: "twitter:title", content: "RevenueX Financial Command Center" },
+      { property: "og:description", content: "Multi-company financial management for agency founders" },
+      { name: "twitter:description", content: "Multi-company financial management for agency founders" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bacc9e06-5d5e-40aa-8e3b-6515c3a6d169/id-preview-ffaff318--992e139b-bd3d-46a2-9b13-e688f8fea0c9.lovable.app-1779387389248.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bacc9e06-5d5e-40aa-8e3b-6515c3a6d169/id-preview-ffaff318--992e139b-bd3d-46a2-9b13-e688f8fea0c9.lovable.app-1779387389248.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -112,7 +120,7 @@ function RootComponent() {
         <CompanyProvider>
           <AuthRefetcher />
           <Outlet />
-          <Toaster position="top-right" richColors closeButton expand />
+          <Toaster position="top-right" />
         </CompanyProvider>
       </AuthProvider>
     </QueryClientProvider>
