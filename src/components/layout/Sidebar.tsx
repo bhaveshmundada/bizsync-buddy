@@ -77,9 +77,9 @@ export function Sidebar() {
             <Link
               key={item.to}
               to={item.to}
-              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+              className={`relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
                 active
-                  ? "bg-emerald-50 font-medium text-emerald-700"
+                  ? "bg-emerald-50 font-medium text-emerald-700 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r before:bg-emerald-600"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
