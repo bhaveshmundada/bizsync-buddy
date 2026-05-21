@@ -59,6 +59,15 @@ function OverviewPage() {
     <div className="space-y-6">
       <PageHeader title={`${currentCompany.name}`} subtitle={`FY ${financialYear} · Overview`} />
 
+      <InsightsSection
+        income={income}
+        expenses={expenses}
+        recoverables={recoverables}
+        invoices={invoices}
+        tools={tools}
+        isPartner={!!isPartner}
+      />
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <MetricCard label="Total income" value={<Money amount={totals.totalIncome} tone="success" />} tone="success" hint="Money received in this FY" />
         <MetricCard label="Total expenses" value={<Money amount={totals.totalExpenses} tone="danger" />} tone="danger" hint="All expenses recorded in this FY" />
