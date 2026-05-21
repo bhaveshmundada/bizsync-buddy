@@ -12,7 +12,8 @@ export function useCompanyRecords<T = Record<string, unknown>>(table: TableName,
     queryKey: [table, currentCompany?.id, fyScoped ? financialYear : null],
     enabled: !!currentCompany,
     queryFn: async (): Promise<T[]> => {
-      let q = supabase.from(table).select("*").eq("company_id", currentCompany!.id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q: any = supabase.from(table).select("*").eq("company_id", currentCompany!.id);
       if (fyScoped && table !== "company_activity" && table !== "company_members" && table !== "tools_subscriptions") {
         q = q.eq("financial_year", financialYear);
       }

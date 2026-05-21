@@ -63,7 +63,8 @@ export function useInsertRow(table: Table) {
       added_by: user.id,
       ...(table !== "tools_subscriptions" ? { financial_year: financialYear } : {}),
     };
-    const { error } = await supabase.from(table).insert(payload);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from(table) as any).insert(payload);
     if (error) throw error;
     qc.invalidateQueries({ queryKey: [table] });
   };
