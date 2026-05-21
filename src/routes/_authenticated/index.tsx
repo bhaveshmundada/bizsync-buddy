@@ -9,6 +9,7 @@ import { useCompanyRecords } from "@/hooks/useCompanyRecords";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { relativeTime } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
+import { InsightsSection } from "@/components/InsightsSection";
 import { Activity } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -57,6 +58,15 @@ function OverviewPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={`${currentCompany.name}`} subtitle={`FY ${financialYear} · Overview`} />
+
+      <InsightsSection
+        income={income}
+        expenses={expenses}
+        recoverables={recoverables}
+        invoices={invoices}
+        tools={tools}
+        isPartner={!!isPartner}
+      />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <MetricCard label="Total income" value={<Money amount={totals.totalIncome} tone="success" />} tone="success" hint="Money received in this FY" />
