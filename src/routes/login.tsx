@@ -44,7 +44,9 @@ function LoginPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/" });
+        // Don't navigate here — the useEffect above will redirect once
+        // AuthContext propagates the new session, avoiding a race with
+        // the _authenticated layout's auth check.
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Authentication failed");
