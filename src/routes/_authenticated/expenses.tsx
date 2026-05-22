@@ -222,7 +222,12 @@ function ExpensesPage() {
                   <TableCell><MemberAvatar name={r.paid_by_name} size="xs" /></TableCell>
                   <TableCell><MemberAvatar name={memberMap.get(r.added_by) ?? "?"} size="xs" /></TableCell>
                   <TableCell className="text-right"><Money amount={r.amount} tone="danger" /></TableCell>
-                  <TableCell><DeleteRowButton table="expenses" id={r.id} label="this expense" /></TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <EditRowButton onClick={() => startEdit(r)} />
+                      <DeleteRowButton table="expenses" id={r.id} label="this expense" />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
