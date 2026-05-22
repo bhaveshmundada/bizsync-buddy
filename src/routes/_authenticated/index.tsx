@@ -7,16 +7,28 @@ import { MetricCard } from "@/components/MetricCard";
 import { Money } from "@/components/Money";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
 import { MemberAvatar } from "@/components/MemberAvatar";
-import { relativeTime } from "@/lib/format";
+import { relativeTime, formatINRCompact } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
 import { InsightsSection } from "@/components/InsightsSection";
-import { Activity } from "lucide-react";
+import { FY_MONTHS, type FyMonth } from "@/lib/months";
+import { Activity, TrendingUp } from "lucide-react";
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: OverviewPage,
 });
 
-type Row = { id: string; amount: number; created_at: string; added_by: string; status?: string; paid_by_name?: string; description?: string; client_name?: string; tool_name?: string; monthly_cost?: number; billing_cycle?: string };
+type Row = { id: string; amount: number; created_at: string; added_by: string; month?: string | null; status?: string; paid_by_name?: string; description?: string; client_name?: string; tool_name?: string; monthly_cost?: number; billing_cycle?: string };
 
 function OverviewPage() {
   const { currentCompany, financialYear, companies } = useCompany();
@@ -41,6 +53,26 @@ function OverviewPage() {
     }, 0);
     return { totalIncome, totalExpenses, profit: totalIncome - totalExpenses, pendingRecov, pendingInvoices, monthlyTools };
   }, [income, expenses, recoverables, invoices, tools]);
+
+  const chartData = useMemo(() => {
+    const incByMonth: Record<string, number> = {};
+    const expByMonth: Record<string, number> = {};
+    FY_MONTHS.forEach((m) => { incByMonth[m] = 0; expByMonth[m] = 0; });
+    income.forEach((r) => {
+      const m = r.month as FyMonth;
+      if (m && FY_MONTHS.includes(m)) incByMonth[m] += Number(r.amount ?? 0);
+    });
+    expenses.forEach((r) => {
+      const m = r.month as FyMonth;
+      if (m && FY_MONTHS.includes(m)) expByMonth[m] += Number(r.amount ?? 0);
+    });
+    return FY_MONTHS.map((m) => ({
+      month: m,
+      Revenue: incByMonth[m],
+      Expenses: expByMonth[m],
+      "Net profit": incByMonth[m] - expByMonth[m],
+    }));
+  }, [income, expenses]);
 
   if (!currentCompany) return <NoCompanyEmpty />;
 
@@ -73,6 +105,42 @@ function OverviewPage() {
         <MetricCard label="Total expenses" value={<Money amount={totals.totalExpenses} tone="danger" />} tone="danger" hint="All expenses recorded in this FY" />
         <MetricCard label="Net profit" value={<Money amount={totals.profit} tone={totals.profit >= 0 ? "success" : "danger"} />} tone={totals.profit >= 0 ? "success" : "danger"} hint="Income minus expenses" />
         <MetricCard label="Pending receivables" value={<Money amount={totals.pendingInvoices + totals.pendingRecov} tone="warning" />} tone="warning" hint="Invoices + client spend awaiting payment" />
+      </div>
+
+      {/* Monthly trend chart */}
+      <div className="rounded-2xl border border-gray-100 bg-white p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-emerald-600" />
+          <h3 className="text-sm font-semibold text-gray-900">Monthly trend</h3>
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <ComposedChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+            <YAxis
+              tick={{ fontSize: 11, fill: "#6b7280" }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => formatINRCompact(v)}
+            />
+            <Tooltip
+              formatter={(value: number, name: string) => [formatINRCompact(value), name]}
+              contentStyle={{ borderRadius: 8, border: "1px solid #f3f4f6", fontSize: 12 }}
+            />
+            <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+            <Bar dataKey="Revenue" fill="#a7f3d0" radius={[4, 4, 0, 0]} barSize={20} />
+            <Bar dataKey="Expenses" fill="#fecdd3" radius={[4, 4, 0, 0]} barSize={20} />
+            <Line
+              type="monotone"
+              dataKey="Net profit"
+              stroke="#059669"
+              strokeWidth={2}
+              strokeDasharray="6 4"
+              dot={{ r: 3, fill: "#059669" }}
+              activeDot={{ r: 5 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
