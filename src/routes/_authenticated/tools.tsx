@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
-import { useInsertRow, DeleteRowButton } from "@/components/RowActions";
+import { useUpsertRow, DeleteRowButton, EditRowButton } from "@/components/RowActions";
 import { TOOL_CATEGORIES, BILLING_CYCLES, TOOL_STATUSES } from "@/lib/months";
 import { formatDate } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
@@ -27,10 +27,12 @@ type Row = { id: string; tool_name: string; monthly_cost: number; billing_cycle:
 function ToolsPage() {
   const { currentCompany, canEdit } = useCompany();
   const { data = [] } = useCompanyRecords<Row>("tools_subscriptions", { fyScoped: false });
-  const insert = useInsertRow("tools_subscriptions");
+  const upsert = useUpsertRow("tools_subscriptions");
 
+  const emptyForm = { tool_name: "", monthly_cost: "", billing_cycle: "Monthly", status: "Active", category: "", renewal_date: "", notes: "" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ tool_name: "", monthly_cost: "", billing_cycle: "Monthly", status: "Active", category: "", renewal_date: "", notes: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   if (!currentCompany) return <NoCompanyEmpty />;
@@ -55,22 +57,44 @@ function ToolsPage() {
     return { monthly, annual, activeCount: active.length, byCategory: [...byCategory.entries()].sort((a, b) => b[1] - a[1]) };
   }, [data]);
 
+  const startEdit = (r: Row) => {
+    setForm({
+      tool_name: r.tool_name,
+      monthly_cost: String(r.monthly_cost),
+      billing_cycle: r.billing_cycle,
+      status: r.status,
+      category: r.category ?? "",
+      renewal_date: r.renewal_date ?? "",
+      notes: r.notes ?? "",
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
   const submit = async () => {
     if (!form.tool_name.trim() || !form.monthly_cost) return toast.error("Tool and cost required");
     setBusy(true);
     try {
-      await insert({
-        tool_name: form.tool_name.trim(),
-        monthly_cost: Number(form.monthly_cost),
-        billing_cycle: form.billing_cycle,
-        status: form.status,
-        category: form.category || null,
-        renewal_date: form.renewal_date || null,
-        notes: form.notes || null,
-      });
-      toast.success("Tool added");
-      setForm({ tool_name: "", monthly_cost: "", billing_cycle: "Monthly", status: "Active", category: "", renewal_date: "", notes: "" });
-      setOpen(false);
+      await upsert(
+        {
+          tool_name: form.tool_name.trim(),
+          monthly_cost: Number(form.monthly_cost),
+          billing_cycle: form.billing_cycle,
+          status: form.status,
+          category: form.category || null,
+          renewal_date: form.renewal_date || null,
+          notes: form.notes || null,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Tool updated" : "Tool added");
+      closeForm();
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Failed"); }
     finally { setBusy(false); }
   };
@@ -80,7 +104,7 @@ function ToolsPage() {
       <PageHeader
         title="Tools & SaaS"
         subtitle="Every subscription draining your bank account"
-        actions={canEdit ? <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> Add tool</Button> : undefined}
+        actions={canEdit ? <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> Add tool</Button> : undefined}
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -113,7 +137,7 @@ function ToolsPage() {
 
       {open && canEdit && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h3 className="mb-3 text-sm font-semibold">Add tool</h3>
+          <h3 className="mb-3 text-sm font-semibold">{editingId ? "Edit tool" : "Add tool"}</h3>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div><Label>Tool name *</Label><Input value={form.tool_name} onChange={(e) => setForm({ ...form, tool_name: e.target.value })} /></div>
             <div><Label>Cost (₹) *</Label><Input type="number" value={form.monthly_cost} onChange={(e) => setForm({ ...form, monthly_cost: e.target.value })} /></div>
@@ -141,8 +165,10 @@ function ToolsPage() {
             <div><Label>Renewal date</Label><Input type="date" value={form.renewal_date} onChange={(e) => setForm({ ...form, renewal_date: e.target.value })} /></div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">{busy ? "Saving..." : "Save"}</Button>
+            <Button variant="outline" onClick={closeForm}>Cancel</Button>
+            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">
+              {busy ? "Saving..." : editingId ? "Update" : "Save"}
+            </Button>
           </div>
         </div>
       )}
@@ -174,7 +200,12 @@ function ToolsPage() {
                   <TableCell className="text-xs text-gray-500">{r.renewal_date ? formatDate(r.renewal_date) : "—"}</TableCell>
                   <TableCell className="text-right"><Money amount={r.monthly_cost} /></TableCell>
                   <TableCell className="text-right text-xs text-gray-500"><Money amount={monthlyEquivalent(r)} /></TableCell>
-                  <TableCell><DeleteRowButton table="tools_subscriptions" id={r.id} /></TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <EditRowButton onClick={() => startEdit(r)} />
+                      <DeleteRowButton table="tools_subscriptions" id={r.id} />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

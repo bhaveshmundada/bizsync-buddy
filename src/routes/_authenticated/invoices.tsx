@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
-import { useInsertRow, DeleteRowButton } from "@/components/RowActions";
+import { useUpsertRow, DeleteRowButton, EditRowButton } from "@/components/RowActions";
 import { INVOICE_STATUSES } from "@/lib/months";
 import { formatDate } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
@@ -30,10 +30,12 @@ function InvoicesPage() {
   const { currentCompany, canEdit } = useCompany();
   const qc = useQueryClient();
   const { data = [] } = useCompanyRecords<Row>("invoices");
-  const insert = useInsertRow("invoices");
+  const upsert = useUpsertRow("invoices");
 
+  const emptyForm = { client_name: "", project_name: "", amount: "", invoice_date: new Date().toISOString().slice(0, 10), due_date: "", status: "Pending" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ client_name: "", project_name: "", amount: "", invoice_date: new Date().toISOString().slice(0, 10), due_date: "", status: "Pending" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   if (!currentCompany) return <NoCompanyEmpty />;
@@ -47,21 +49,42 @@ function InvoicesPage() {
     };
   }, [data]);
 
+  const startEdit = (r: Row) => {
+    setForm({
+      client_name: r.client_name,
+      project_name: r.project_name ?? "",
+      amount: String(r.amount),
+      invoice_date: r.invoice_date,
+      due_date: r.due_date ?? "",
+      status: r.status,
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm({ ...emptyForm, invoice_date: new Date().toISOString().slice(0, 10) });
+  };
+
   const submit = async () => {
     if (!form.client_name.trim() || !form.amount || !form.invoice_date) return toast.error("Client, amount, and invoice date required");
     setBusy(true);
     try {
-      await insert({
-        client_name: form.client_name.trim(),
-        project_name: form.project_name || null,
-        amount: Number(form.amount),
-        invoice_date: form.invoice_date,
-        due_date: form.due_date || null,
-        status: form.status,
-      });
-      toast.success("Invoice added");
-      setForm({ client_name: "", project_name: "", amount: "", invoice_date: new Date().toISOString().slice(0, 10), due_date: "", status: "Pending" });
-      setOpen(false);
+      await upsert(
+        {
+          client_name: form.client_name.trim(),
+          project_name: form.project_name || null,
+          amount: Number(form.amount),
+          invoice_date: form.invoice_date,
+          due_date: form.due_date || null,
+          status: form.status,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Invoice updated" : "Invoice added");
+      closeForm();
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Failed"); }
     finally { setBusy(false); }
   };
@@ -84,7 +107,7 @@ function InvoicesPage() {
       <PageHeader
         title="Invoices"
         subtitle="Track what clients owe you and when it's due"
-        actions={canEdit ? <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> New invoice</Button> : undefined}
+        actions={canEdit ? <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> New invoice</Button> : undefined}
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -95,7 +118,7 @@ function InvoicesPage() {
 
       {open && canEdit && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h3 className="mb-3 text-sm font-semibold">New invoice</h3>
+          <h3 className="mb-3 text-sm font-semibold">{editingId ? "Edit invoice" : "New invoice"}</h3>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div><Label>Client *</Label><Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} /></div>
             <div><Label>Project</Label><Input value={form.project_name} onChange={(e) => setForm({ ...form, project_name: e.target.value })} /></div>
@@ -111,8 +134,10 @@ function InvoicesPage() {
             </div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">{busy ? "Saving..." : "Save"}</Button>
+            <Button variant="outline" onClick={closeForm}>Cancel</Button>
+            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">
+              {busy ? "Saving..." : editingId ? "Update" : "Save"}
+            </Button>
           </div>
         </div>
       )}
@@ -156,7 +181,12 @@ function InvoicesPage() {
                       ) : <span className="text-xs">{r.status}</span>}
                     </TableCell>
                     <TableCell className="text-right"><Money amount={r.amount} /></TableCell>
-                    <TableCell><DeleteRowButton table="invoices" id={r.id} label="this invoice" /></TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-1">
+                        <EditRowButton onClick={() => startEdit(r)} />
+                        <DeleteRowButton table="invoices" id={r.id} label="this invoice" />
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}

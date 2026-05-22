@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
-import { useInsertRow, DeleteRowButton } from "@/components/RowActions";
+import { useUpsertRow, DeleteRowButton, EditRowButton } from "@/components/RowActions";
 import { FY_MONTHS, SERVICE_TYPES } from "@/lib/months";
 import { formatDate } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
@@ -31,10 +31,12 @@ function IncomePage() {
   const { currentCompany, canEdit } = useCompany();
   const { data = [], isLoading } = useCompanyRecords<IncomeRow>("income");
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
-  const insert = useInsertRow("income");
+  const upsert = useUpsertRow("income");
 
+  const emptyForm = { client_name: "", amount: "", month: "", service_type: "", notes: "" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ client_name: "", amount: "", month: "", service_type: "", notes: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   if (!currentCompany) return <NoCompanyEmpty />;
@@ -46,20 +48,40 @@ function IncomePage() {
   const topClient = [...byClient.entries()].sort((a, b) => b[1] - a[1])[0];
   const avgPerClient = byClient.size > 0 ? total / byClient.size : 0;
 
+  const startEdit = (r: IncomeRow) => {
+    setForm({
+      client_name: r.client_name,
+      amount: String(r.amount),
+      month: r.month ?? "",
+      service_type: r.service_type ?? "",
+      notes: r.notes ?? "",
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
   const submit = async () => {
     if (!form.client_name.trim() || !form.amount) return toast.error("Client and amount required");
     setBusy(true);
     try {
-      await insert({
-        client_name: form.client_name.trim(),
-        amount: Number(form.amount),
-        month: form.month || null,
-        service_type: form.service_type || null,
-        notes: form.notes || null,
-      });
-      toast.success("Income added");
-      setForm({ client_name: "", amount: "", month: "", service_type: "", notes: "" });
-      setOpen(false);
+      await upsert(
+        {
+          client_name: form.client_name.trim(),
+          amount: Number(form.amount),
+          month: form.month || null,
+          service_type: form.service_type || null,
+          notes: form.notes || null,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Income updated" : "Income added");
+      closeForm();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
@@ -85,7 +107,7 @@ function IncomePage() {
               <Download className="mr-1 h-3.5 w-3.5" /> Export CSV
             </Button>
             {canEdit && (
-              <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="mr-1 h-3.5 w-3.5" /> Add income
               </Button>
             )}
@@ -101,7 +123,7 @@ function IncomePage() {
 
       {open && canEdit && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h3 className="mb-3 text-sm font-semibold">Add income</h3>
+          <h3 className="mb-3 text-sm font-semibold">{editingId ? "Edit income" : "Add income"}</h3>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
               <Label>Client name *</Label>
@@ -131,8 +153,10 @@ function IncomePage() {
             </div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">{busy ? "Saving..." : "Save"}</Button>
+            <Button variant="outline" onClick={closeForm}>Cancel</Button>
+            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">
+              {busy ? "Saving..." : editingId ? "Update" : "Save"}
+            </Button>
           </div>
         </div>
       )}
@@ -164,7 +188,12 @@ function IncomePage() {
                   <TableCell className="text-xs text-gray-500">{r.month ?? "—"}</TableCell>
                   <TableCell><MemberAvatar name={memberMap.get(r.added_by) ?? "?"} size="xs" /></TableCell>
                   <TableCell className="text-right"><Money amount={r.amount} tone="success" /></TableCell>
-                  <TableCell><DeleteRowButton table="income" id={r.id} label="this income" /></TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <EditRowButton onClick={() => startEdit(r)} />
+                      <DeleteRowButton table="income" id={r.id} label="this income" />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

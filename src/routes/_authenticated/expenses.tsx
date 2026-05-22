@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
-import { useInsertRow, DeleteRowButton } from "@/components/RowActions";
+import { useUpsertRow, DeleteRowButton, EditRowButton } from "@/components/RowActions";
 import { FY_MONTHS, EXPENSE_CATEGORIES } from "@/lib/months";
 import { formatDate } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
@@ -32,10 +32,12 @@ function ExpensesPage() {
   const { currentCompany, canEdit } = useCompany();
   const { data = [] } = useCompanyRecords<ExpenseRow>("expenses");
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
-  const insert = useInsertRow("expenses");
+  const upsert = useUpsertRow("expenses");
 
+  const emptyForm = { description: "", amount: "", month: "", category: "", paid_by_name: "", notes: "" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ description: "", amount: "", month: "", category: "", paid_by_name: "", notes: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   const withdrawalsByMember = useMemo(() => {
@@ -52,21 +54,42 @@ function ExpensesPage() {
   const total = data.reduce((s, r) => s + Number(r.amount ?? 0), 0);
   const isPartner = members.length > 1;
 
+  const startEdit = (r: ExpenseRow) => {
+    setForm({
+      description: r.description,
+      amount: String(r.amount),
+      month: r.month ?? "",
+      category: r.category ?? "",
+      paid_by_name: r.paid_by_name,
+      notes: r.notes ?? "",
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
   const submit = async () => {
     if (!form.description.trim() || !form.amount || !form.paid_by_name) return toast.error("Description, amount, and 'who paid' are required");
     setBusy(true);
     try {
-      await insert({
-        description: form.description.trim(),
-        amount: Number(form.amount),
-        month: form.month || null,
-        category: form.category || null,
-        paid_by_name: form.paid_by_name,
-        notes: form.notes || null,
-      });
-      toast.success("Expense added");
-      setForm({ description: "", amount: "", month: "", category: "", paid_by_name: "", notes: "" });
-      setOpen(false);
+      await upsert(
+        {
+          description: form.description.trim(),
+          amount: Number(form.amount),
+          month: form.month || null,
+          category: form.category || null,
+          paid_by_name: form.paid_by_name,
+          notes: form.notes || null,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Expense updated" : "Expense added");
+      closeForm();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
@@ -90,7 +113,7 @@ function ExpensesPage() {
               { key: "month", label: "Month" },
             ])}><Download className="mr-1 h-3.5 w-3.5" /> Export CSV</Button>
             {canEdit && (
-              <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="mr-1 h-3.5 w-3.5" /> Add expense
               </Button>
             )}
@@ -123,7 +146,7 @@ function ExpensesPage() {
 
       {open && canEdit && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h3 className="mb-3 text-sm font-semibold">Add expense</h3>
+          <h3 className="mb-3 text-sm font-semibold">{editingId ? "Edit expense" : "Add expense"}</h3>
           {isPartner && (
             <div className="mb-3"><HintBox tone="purple">In a partner company, always record who actually paid — it determines partner withdrawals.</HintBox></div>
           )}
@@ -166,8 +189,10 @@ function ExpensesPage() {
             </div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">{busy ? "Saving..." : "Save"}</Button>
+            <Button variant="outline" onClick={closeForm}>Cancel</Button>
+            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">
+              {busy ? "Saving..." : editingId ? "Update" : "Save"}
+            </Button>
           </div>
         </div>
       )}
@@ -197,7 +222,12 @@ function ExpensesPage() {
                   <TableCell><MemberAvatar name={r.paid_by_name} size="xs" /></TableCell>
                   <TableCell><MemberAvatar name={memberMap.get(r.added_by) ?? "?"} size="xs" /></TableCell>
                   <TableCell className="text-right"><Money amount={r.amount} tone="danger" /></TableCell>
-                  <TableCell><DeleteRowButton table="expenses" id={r.id} label="this expense" /></TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <EditRowButton onClick={() => startEdit(r)} />
+                      <DeleteRowButton table="expenses" id={r.id} label="this expense" />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

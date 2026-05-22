@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
-import { useInsertRow, DeleteRowButton } from "@/components/RowActions";
+import { useUpsertRow, DeleteRowButton, EditRowButton } from "@/components/RowActions";
 import { FY_MONTHS, PAID_VIA_OPTIONS, RECOVERABLE_STATUSES } from "@/lib/months";
 import { formatDate } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
@@ -34,10 +34,12 @@ function RecoverablesPage() {
   const qc = useQueryClient();
   const { data = [] } = useCompanyRecords<Row>("client_recoverables");
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
-  const insert = useInsertRow("client_recoverables");
+  const upsert = useUpsertRow("client_recoverables");
 
+  const emptyForm = { client_name: "", amount: "", description: "", month: "", paid_via: "", paid_by_name: "", status: "Pending" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ client_name: "", amount: "", description: "", month: "", paid_via: "", paid_by_name: "", status: "Pending" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   if (!currentCompany) return <NoCompanyEmpty />;
@@ -60,22 +62,44 @@ function RecoverablesPage() {
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }, [data]);
 
+  const startEdit = (r: Row) => {
+    setForm({
+      client_name: r.client_name,
+      amount: String(r.amount),
+      description: r.description ?? "",
+      month: r.month ?? "",
+      paid_via: r.paid_via ?? "",
+      paid_by_name: r.paid_by_name,
+      status: r.status,
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
   const submit = async () => {
     if (!form.client_name.trim() || !form.amount || !form.paid_by_name) return toast.error("Client, amount, and 'paid by' are required");
     setBusy(true);
     try {
-      await insert({
-        client_name: form.client_name.trim(),
-        amount: Number(form.amount),
-        description: form.description || null,
-        month: form.month || null,
-        paid_via: form.paid_via || null,
-        paid_by_name: form.paid_by_name,
-        status: form.status,
-      });
-      toast.success("Recorded");
-      setForm({ client_name: "", amount: "", description: "", month: "", paid_via: "", paid_by_name: "", status: "Pending" });
-      setOpen(false);
+      await upsert(
+        {
+          client_name: form.client_name.trim(),
+          amount: Number(form.amount),
+          description: form.description || null,
+          month: form.month || null,
+          paid_via: form.paid_via || null,
+          paid_by_name: form.paid_by_name,
+          status: form.status,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Updated" : "Recorded");
+      closeForm();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
@@ -100,7 +124,7 @@ function RecoverablesPage() {
       <PageHeader
         title="Client spend (recoverables)"
         subtitle="Money you spent on behalf of clients — to recover from them"
-        actions={canEdit ? <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> Add</Button> : undefined}
+        actions={canEdit ? <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> Add</Button> : undefined}
       />
 
       <HintBox tone="blue">
@@ -127,7 +151,7 @@ function RecoverablesPage() {
 
       {open && canEdit && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h3 className="mb-3 text-sm font-semibold">Add client spend</h3>
+          <h3 className="mb-3 text-sm font-semibold">{editingId ? "Edit client spend" : "Add client spend"}</h3>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div><Label>Client *</Label><Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} /></div>
             <div><Label>Amount (₹) *</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
@@ -162,8 +186,10 @@ function RecoverablesPage() {
             </div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">{busy ? "Saving..." : "Save"}</Button>
+            <Button variant="outline" onClick={closeForm}>Cancel</Button>
+            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">
+              {busy ? "Saving..." : editingId ? "Update" : "Save"}
+            </Button>
           </div>
         </div>
       )}
@@ -202,7 +228,12 @@ function RecoverablesPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right"><Money amount={r.amount} /></TableCell>
-                  <TableCell><DeleteRowButton table="client_recoverables" id={r.id} /></TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <EditRowButton onClick={() => startEdit(r)} />
+                      <DeleteRowButton table="client_recoverables" id={r.id} />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
