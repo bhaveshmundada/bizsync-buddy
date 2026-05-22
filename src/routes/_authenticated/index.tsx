@@ -107,6 +107,42 @@ function OverviewPage() {
         <MetricCard label="Pending receivables" value={<Money amount={totals.pendingInvoices + totals.pendingRecov} tone="warning" />} tone="warning" hint="Invoices + client spend awaiting payment" />
       </div>
 
+      {/* Monthly trend chart */}
+      <div className="rounded-2xl border border-gray-100 bg-white p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-emerald-600" />
+          <h3 className="text-sm font-semibold text-gray-900">Monthly trend</h3>
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <ComposedChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+            <YAxis
+              tick={{ fontSize: 11, fill: "#6b7280" }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => formatINRCompact(v)}
+            />
+            <Tooltip
+              formatter={(value: number, name: string) => [formatINRCompact(value), name]}
+              contentStyle={{ borderRadius: 8, border: "1px solid #f3f4f6", fontSize: 12 }}
+            />
+            <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+            <Bar dataKey="Revenue" fill="#a7f3d0" radius={[4, 4, 0, 0]} barSize={20} />
+            <Bar dataKey="Expenses" fill="#fecdd3" radius={[4, 4, 0, 0]} barSize={20} />
+            <Line
+              type="monotone"
+              dataKey="Net profit"
+              stroke="#059669"
+              strokeWidth={2}
+              strokeDasharray="6 4"
+              dot={{ r: 3, fill: "#059669" }}
+              activeDot={{ r: 5 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-2xl border border-gray-100 bg-white p-5 lg:col-span-2">
           <h3 className="text-sm font-semibold text-gray-900">Quick snapshot</h3>
