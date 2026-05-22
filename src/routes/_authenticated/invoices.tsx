@@ -181,7 +181,12 @@ function InvoicesPage() {
                       ) : <span className="text-xs">{r.status}</span>}
                     </TableCell>
                     <TableCell className="text-right"><Money amount={r.amount} /></TableCell>
-                    <TableCell><DeleteRowButton table="invoices" id={r.id} label="this invoice" /></TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-1">
+                        <EditRowButton onClick={() => startEdit(r)} />
+                        <DeleteRowButton table="invoices" id={r.id} label="this invoice" />
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}
