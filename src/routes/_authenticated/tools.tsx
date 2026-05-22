@@ -27,10 +27,12 @@ type Row = { id: string; tool_name: string; monthly_cost: number; billing_cycle:
 function ToolsPage() {
   const { currentCompany, canEdit } = useCompany();
   const { data = [] } = useCompanyRecords<Row>("tools_subscriptions", { fyScoped: false });
-  const insert = useInsertRow("tools_subscriptions");
+  const upsert = useUpsertRow("tools_subscriptions");
 
+  const emptyForm = { tool_name: "", monthly_cost: "", billing_cycle: "Monthly", status: "Active", category: "", renewal_date: "", notes: "" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ tool_name: "", monthly_cost: "", billing_cycle: "Monthly", status: "Active", category: "", renewal_date: "", notes: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   if (!currentCompany) return <NoCompanyEmpty />;
@@ -55,22 +57,44 @@ function ToolsPage() {
     return { monthly, annual, activeCount: active.length, byCategory: [...byCategory.entries()].sort((a, b) => b[1] - a[1]) };
   }, [data]);
 
+  const startEdit = (r: Row) => {
+    setForm({
+      tool_name: r.tool_name,
+      monthly_cost: String(r.monthly_cost),
+      billing_cycle: r.billing_cycle,
+      status: r.status,
+      category: r.category ?? "",
+      renewal_date: r.renewal_date ?? "",
+      notes: r.notes ?? "",
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
   const submit = async () => {
     if (!form.tool_name.trim() || !form.monthly_cost) return toast.error("Tool and cost required");
     setBusy(true);
     try {
-      await insert({
-        tool_name: form.tool_name.trim(),
-        monthly_cost: Number(form.monthly_cost),
-        billing_cycle: form.billing_cycle,
-        status: form.status,
-        category: form.category || null,
-        renewal_date: form.renewal_date || null,
-        notes: form.notes || null,
-      });
-      toast.success("Tool added");
-      setForm({ tool_name: "", monthly_cost: "", billing_cycle: "Monthly", status: "Active", category: "", renewal_date: "", notes: "" });
-      setOpen(false);
+      await upsert(
+        {
+          tool_name: form.tool_name.trim(),
+          monthly_cost: Number(form.monthly_cost),
+          billing_cycle: form.billing_cycle,
+          status: form.status,
+          category: form.category || null,
+          renewal_date: form.renewal_date || null,
+          notes: form.notes || null,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Tool updated" : "Tool added");
+      closeForm();
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Failed"); }
     finally { setBusy(false); }
   };
