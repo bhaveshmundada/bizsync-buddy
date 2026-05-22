@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/")({
   component: OverviewPage,
 });
 
-type Row = { id: string; amount: number; created_at: string; added_by: string; status?: string; paid_by_name?: string; description?: string; client_name?: string; tool_name?: string; monthly_cost?: number; billing_cycle?: string };
+type Row = { id: string; amount: number; created_at: string; added_by: string; month?: string | null; status?: string; paid_by_name?: string; description?: string; client_name?: string; tool_name?: string; monthly_cost?: number; billing_cycle?: string };
 
 function OverviewPage() {
   const { currentCompany, financialYear, companies } = useCompany();
@@ -53,6 +53,26 @@ function OverviewPage() {
     }, 0);
     return { totalIncome, totalExpenses, profit: totalIncome - totalExpenses, pendingRecov, pendingInvoices, monthlyTools };
   }, [income, expenses, recoverables, invoices, tools]);
+
+  const chartData = useMemo(() => {
+    const incByMonth: Record<string, number> = {};
+    const expByMonth: Record<string, number> = {};
+    FY_MONTHS.forEach((m) => { incByMonth[m] = 0; expByMonth[m] = 0; });
+    income.forEach((r) => {
+      const m = r.month as FyMonth;
+      if (m && FY_MONTHS.includes(m)) incByMonth[m] += Number(r.amount ?? 0);
+    });
+    expenses.forEach((r) => {
+      const m = r.month as FyMonth;
+      if (m && FY_MONTHS.includes(m)) expByMonth[m] += Number(r.amount ?? 0);
+    });
+    return FY_MONTHS.map((m) => ({
+      month: m,
+      Revenue: incByMonth[m],
+      Expenses: expByMonth[m],
+      "Net profit": incByMonth[m] - expByMonth[m],
+    }));
+  }, [income, expenses]);
 
   if (!currentCompany) return <NoCompanyEmpty />;
 
