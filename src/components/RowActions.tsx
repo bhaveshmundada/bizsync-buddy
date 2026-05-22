@@ -51,21 +51,48 @@ export function DeleteRowButton({ table, id, label = "this row" }: { table: Tabl
   );
 }
 
+export function EditRowButton({ onClick }: { onClick: () => void }) {
+  const { canEdit } = useCompany();
+  if (!canEdit) return null;
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      className="h-7 w-7 p-0 text-gray-400 hover:text-emerald-600"
+      onClick={onClick}
+      title="Edit"
+    >
+      <Pencil className="h-3.5 w-3.5" />
+    </Button>
+  );
+}
+
 export function useInsertRow(table: Table) {
+  const upsert = useUpsertRow(table);
+  return (values: Record<string, unknown>) => upsert(values, null);
+}
+
+export function useUpsertRow(table: Table) {
   const { currentCompany, financialYear } = useCompany();
   const { user } = useAuth();
   const qc = useQueryClient();
-  return async (values: Record<string, unknown>) => {
+  return async (values: Record<string, unknown>, editingId: string | null) => {
     if (!currentCompany || !user) throw new Error("No company");
-    const payload = {
-      ...values,
-      company_id: currentCompany.id,
-      added_by: user.id,
-      ...(table !== "tools_subscriptions" ? { financial_year: financialYear } : {}),
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from(table) as any).insert(payload);
-    if (error) throw error;
+    if (editingId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from(table) as any).update(values).eq("id", editingId);
+      if (error) throw error;
+    } else {
+      const payload = {
+        ...values,
+        company_id: currentCompany.id,
+        added_by: user.id,
+        ...(table !== "tools_subscriptions" ? { financial_year: financialYear } : {}),
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from(table) as any).insert(payload);
+      if (error) throw error;
+    }
     qc.invalidateQueries({ queryKey: [table] });
   };
 }
