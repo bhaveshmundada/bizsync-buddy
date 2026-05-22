@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { NoCompanyEmpty } from "@/components/NoCompanyEmpty";
 import { PageHeader } from "@/components/PageHeader";
+import { HintBox } from "@/components/HintBox";
 import { Money } from "@/components/Money";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
 import { FY_MONTHS, type FyMonth } from "@/lib/months";
