@@ -104,7 +104,7 @@ function ToolsPage() {
       <PageHeader
         title="Tools & SaaS"
         subtitle="Every subscription draining your bank account"
-        actions={canEdit ? <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> Add tool</Button> : undefined}
+        actions={canEdit ? <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> Add tool</Button> : undefined}
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
