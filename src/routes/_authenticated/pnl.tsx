@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { NoCompanyEmpty } from "@/components/NoCompanyEmpty";
 import { PageHeader } from "@/components/PageHeader";
+import { HintBox } from "@/components/HintBox";
 import { Money } from "@/components/Money";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
 import { FY_MONTHS, type FyMonth } from "@/lib/months";
@@ -127,6 +128,10 @@ function PnLPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Monthly P&L" subtitle={`FY ${financialYear} · Full income statement`} />
+
+      <HintBox tone="emerald">
+        P&L = Profit & Loss = your monthly report card. Revenue on top, costs below, what's left is your profit. A healthy agency keeps 20%+ as profit after everything.
+      </HintBox>
 
       <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
         <table className="w-full min-w-[900px] text-sm">

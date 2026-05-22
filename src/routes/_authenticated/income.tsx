@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { NoCompanyEmpty } from "@/components/NoCompanyEmpty";
 import { PageHeader } from "@/components/PageHeader";
+import { HintBox } from "@/components/HintBox";
 import { MetricCard } from "@/components/MetricCard";
 import { Money } from "@/components/Money";
 import { Button } from "@/components/ui/button";
@@ -114,6 +115,10 @@ function IncomePage() {
           </>
         }
       />
+
+      <HintBox tone="emerald">
+        Income = money clients actually paid you. Not promises, not invoices — real money in your bank account. Only log here when the payment hits.
+      </HintBox>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <MetricCard label="Total income" value={<Money amount={total} tone="success" />} tone="success" />
