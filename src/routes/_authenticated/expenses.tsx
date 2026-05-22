@@ -113,7 +113,7 @@ function ExpensesPage() {
               { key: "month", label: "Month" },
             ])}><Download className="mr-1 h-3.5 w-3.5" /> Export CSV</Button>
             {canEdit && (
-              <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="mr-1 h-3.5 w-3.5" /> Add expense
               </Button>
             )}
