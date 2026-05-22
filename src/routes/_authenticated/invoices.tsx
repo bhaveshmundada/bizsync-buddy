@@ -107,7 +107,7 @@ function InvoicesPage() {
       <PageHeader
         title="Invoices"
         subtitle="Track what clients owe you and when it's due"
-        actions={canEdit ? <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> New invoice</Button> : undefined}
+        actions={canEdit ? <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> New invoice</Button> : undefined}
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
