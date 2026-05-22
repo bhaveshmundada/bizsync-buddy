@@ -228,7 +228,12 @@ function RecoverablesPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right"><Money amount={r.amount} /></TableCell>
-                  <TableCell><DeleteRowButton table="client_recoverables" id={r.id} /></TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <EditRowButton onClick={() => startEdit(r)} />
+                      <DeleteRowButton table="client_recoverables" id={r.id} />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
