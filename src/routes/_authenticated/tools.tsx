@@ -165,8 +165,10 @@ function ToolsPage() {
             <div><Label>Renewal date</Label><Input type="date" value={form.renewal_date} onChange={(e) => setForm({ ...form, renewal_date: e.target.value })} /></div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">{busy ? "Saving..." : "Save"}</Button>
+            <Button variant="outline" onClick={closeForm}>Cancel</Button>
+            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">
+              {busy ? "Saving..." : editingId ? "Update" : "Save"}
+            </Button>
           </div>
         </div>
       )}
