@@ -22,7 +22,7 @@ type Row = {
   client_name?: string;
   paid_by_name?: string;
   category?: string;
-  month?: string;
+  month?: string | null;
   due_date?: string | null;
   billing_cycle?: string;
   monthly_cost?: number;
