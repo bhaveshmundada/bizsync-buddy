@@ -129,6 +129,10 @@ function PnLPage() {
     <div className="space-y-6">
       <PageHeader title="Monthly P&L" subtitle={`FY ${financialYear} · Full income statement`} />
 
+      <HintBox tone="emerald">
+        P&L = Profit & Loss = your monthly report card. Revenue on top, costs below, what's left is your profit. A healthy agency keeps 20%+ as profit after everything.
+      </HintBox>
+
       <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
         <table className="w-full min-w-[900px] text-sm">
           <thead className="border-b border-gray-100 bg-gray-50/50 text-xs uppercase tracking-wide text-gray-500">
