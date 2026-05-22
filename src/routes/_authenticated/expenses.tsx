@@ -146,7 +146,7 @@ function ExpensesPage() {
 
       {open && canEdit && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h3 className="mb-3 text-sm font-semibold">Add expense</h3>
+          <h3 className="mb-3 text-sm font-semibold">{editingId ? "Edit expense" : "Add expense"}</h3>
           {isPartner && (
             <div className="mb-3"><HintBox tone="purple">In a partner company, always record who actually paid — it determines partner withdrawals.</HintBox></div>
           )}
