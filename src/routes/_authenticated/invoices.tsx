@@ -111,6 +111,10 @@ function InvoicesPage() {
         actions={canEdit ? <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> New invoice</Button> : undefined}
       />
 
+      <HintBox tone="blue">
+        Invoice ≠ income. An invoice is a bill you sent. Income is when they actually pay. Track invoices here to know who owes you money. Rule of thumb: follow up at 7 days, firm reminder at 15, escalate at 30.
+      </HintBox>
+
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <MetricCard label="Pending" value={<Money amount={totals.pending} tone="warning" />} tone="warning" />
         <MetricCard label="Overdue" value={<Money amount={totals.overdue} tone="danger" />} tone="danger" hint="Past due date and not paid" />
