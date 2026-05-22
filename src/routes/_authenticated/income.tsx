@@ -107,7 +107,7 @@ function IncomePage() {
               <Download className="mr-1 h-3.5 w-3.5" /> Export CSV
             </Button>
             {canEdit && (
-              <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="mr-1 h-3.5 w-3.5" /> Add income
               </Button>
             )}
@@ -123,7 +123,7 @@ function IncomePage() {
 
       {open && canEdit && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h3 className="mb-3 text-sm font-semibold">Add income</h3>
+          <h3 className="mb-3 text-sm font-semibold">{editingId ? "Edit income" : "Add income"}</h3>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
               <Label>Client name *</Label>
@@ -153,8 +153,10 @@ function IncomePage() {
             </div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">{busy ? "Saving..." : "Save"}</Button>
+            <Button variant="outline" onClick={closeForm}>Cancel</Button>
+            <Button onClick={submit} disabled={busy} className="bg-emerald-600 hover:bg-emerald-700">
+              {busy ? "Saving..." : editingId ? "Update" : "Save"}
+            </Button>
           </div>
         </div>
       )}
