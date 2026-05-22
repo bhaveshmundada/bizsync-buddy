@@ -21,22 +21,39 @@ export function NoCompanyEmpty() {
     if (!user || !name.trim() || !displayName.trim()) return;
     setBusy(true);
     try {
-      const { data, error } = await supabase
+      const companyName = name.trim();
+      const memberDisplayName = displayName.trim();
+
+      const { error: insertError } = await supabase
         .from("companies")
-        .insert({ name: name.trim(), created_by: user.id })
-        .select()
+        .insert({ name: companyName, created_by: user.id });
+      if (insertError) throw insertError;
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const { data: newCompany, error: fetchError } = await supabase
+        .from("companies")
+        .select("*")
+        .eq("created_by", user.id)
+        .eq("name", companyName)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .single();
-      if (error) throw error;
+      if (fetchError) throw fetchError;
+
       await supabase
         .from("company_members")
-        .update({ display_name: displayName.trim() })
-        .eq("company_id", data.id)
+        .update({ display_name: memberDisplayName })
+        .eq("company_id", newCompany.id)
         .eq("user_id", user.id);
-      toast.success(`Created ${data.name}`);
+      toast.success(`Created ${newCompany.name}`);
       await refreshCompanies();
-      switchCompany(data.id);
+      switchCompany(newCompany.id);
       setOpen(false);
+      setName("");
+      setDisplayName("");
     } catch (e: unknown) {
+      console.error("Create company failed:", e);
       toast.error(e instanceof Error ? e.message : "Failed to create company");
     } finally {
       setBusy(false);
