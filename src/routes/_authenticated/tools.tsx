@@ -200,7 +200,12 @@ function ToolsPage() {
                   <TableCell className="text-xs text-gray-500">{r.renewal_date ? formatDate(r.renewal_date) : "—"}</TableCell>
                   <TableCell className="text-right"><Money amount={r.monthly_cost} /></TableCell>
                   <TableCell className="text-right text-xs text-gray-500"><Money amount={monthlyEquivalent(r)} /></TableCell>
-                  <TableCell><DeleteRowButton table="tools_subscriptions" id={r.id} /></TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <EditRowButton onClick={() => startEdit(r)} />
+                      <DeleteRowButton table="tools_subscriptions" id={r.id} />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
