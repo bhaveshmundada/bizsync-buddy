@@ -30,10 +30,12 @@ function InvoicesPage() {
   const { currentCompany, canEdit } = useCompany();
   const qc = useQueryClient();
   const { data = [] } = useCompanyRecords<Row>("invoices");
-  const insert = useInsertRow("invoices");
+  const upsert = useUpsertRow("invoices");
 
+  const emptyForm = { client_name: "", project_name: "", amount: "", invoice_date: new Date().toISOString().slice(0, 10), due_date: "", status: "Pending" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ client_name: "", project_name: "", amount: "", invoice_date: new Date().toISOString().slice(0, 10), due_date: "", status: "Pending" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   if (!currentCompany) return <NoCompanyEmpty />;
@@ -47,21 +49,42 @@ function InvoicesPage() {
     };
   }, [data]);
 
+  const startEdit = (r: Row) => {
+    setForm({
+      client_name: r.client_name,
+      project_name: r.project_name ?? "",
+      amount: String(r.amount),
+      invoice_date: r.invoice_date,
+      due_date: r.due_date ?? "",
+      status: r.status,
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm({ ...emptyForm, invoice_date: new Date().toISOString().slice(0, 10) });
+  };
+
   const submit = async () => {
     if (!form.client_name.trim() || !form.amount || !form.invoice_date) return toast.error("Client, amount, and invoice date required");
     setBusy(true);
     try {
-      await insert({
-        client_name: form.client_name.trim(),
-        project_name: form.project_name || null,
-        amount: Number(form.amount),
-        invoice_date: form.invoice_date,
-        due_date: form.due_date || null,
-        status: form.status,
-      });
-      toast.success("Invoice added");
-      setForm({ client_name: "", project_name: "", amount: "", invoice_date: new Date().toISOString().slice(0, 10), due_date: "", status: "Pending" });
-      setOpen(false);
+      await upsert(
+        {
+          client_name: form.client_name.trim(),
+          project_name: form.project_name || null,
+          amount: Number(form.amount),
+          invoice_date: form.invoice_date,
+          due_date: form.due_date || null,
+          status: form.status,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Invoice updated" : "Invoice added");
+      closeForm();
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Failed"); }
     finally { setBusy(false); }
   };
