@@ -31,10 +31,12 @@ function IncomePage() {
   const { currentCompany, canEdit } = useCompany();
   const { data = [], isLoading } = useCompanyRecords<IncomeRow>("income");
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
-  const insert = useInsertRow("income");
+  const upsert = useUpsertRow("income");
 
+  const emptyForm = { client_name: "", amount: "", month: "", service_type: "", notes: "" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ client_name: "", amount: "", month: "", service_type: "", notes: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   if (!currentCompany) return <NoCompanyEmpty />;
@@ -46,20 +48,40 @@ function IncomePage() {
   const topClient = [...byClient.entries()].sort((a, b) => b[1] - a[1])[0];
   const avgPerClient = byClient.size > 0 ? total / byClient.size : 0;
 
+  const startEdit = (r: IncomeRow) => {
+    setForm({
+      client_name: r.client_name,
+      amount: String(r.amount),
+      month: r.month ?? "",
+      service_type: r.service_type ?? "",
+      notes: r.notes ?? "",
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
   const submit = async () => {
     if (!form.client_name.trim() || !form.amount) return toast.error("Client and amount required");
     setBusy(true);
     try {
-      await insert({
-        client_name: form.client_name.trim(),
-        amount: Number(form.amount),
-        month: form.month || null,
-        service_type: form.service_type || null,
-        notes: form.notes || null,
-      });
-      toast.success("Income added");
-      setForm({ client_name: "", amount: "", month: "", service_type: "", notes: "" });
-      setOpen(false);
+      await upsert(
+        {
+          client_name: form.client_name.trim(),
+          amount: Number(form.amount),
+          month: form.month || null,
+          service_type: form.service_type || null,
+          notes: form.notes || null,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Income updated" : "Income added");
+      closeForm();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
