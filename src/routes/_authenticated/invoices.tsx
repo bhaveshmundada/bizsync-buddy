@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/CompanyContext";
 import { NoCompanyEmpty } from "@/components/NoCompanyEmpty";
 import { PageHeader } from "@/components/PageHeader";
+import { HintBox } from "@/components/HintBox";
 import { MetricCard } from "@/components/MetricCard";
 import { Money } from "@/components/Money";
 import { Button } from "@/components/ui/button";
