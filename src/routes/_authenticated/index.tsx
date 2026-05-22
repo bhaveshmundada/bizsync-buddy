@@ -7,10 +7,22 @@ import { MetricCard } from "@/components/MetricCard";
 import { Money } from "@/components/Money";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
 import { MemberAvatar } from "@/components/MemberAvatar";
-import { relativeTime } from "@/lib/format";
+import { relativeTime, formatINRCompact } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
 import { InsightsSection } from "@/components/InsightsSection";
-import { Activity } from "lucide-react";
+import { FY_MONTHS, type FyMonth } from "@/lib/months";
+import { Activity, TrendingUp } from "lucide-react";
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: OverviewPage,
