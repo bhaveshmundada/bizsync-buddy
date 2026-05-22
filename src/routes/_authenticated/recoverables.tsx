@@ -34,10 +34,12 @@ function RecoverablesPage() {
   const qc = useQueryClient();
   const { data = [] } = useCompanyRecords<Row>("client_recoverables");
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
-  const insert = useInsertRow("client_recoverables");
+  const upsert = useUpsertRow("client_recoverables");
 
+  const emptyForm = { client_name: "", amount: "", description: "", month: "", paid_via: "", paid_by_name: "", status: "Pending" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ client_name: "", amount: "", description: "", month: "", paid_via: "", paid_by_name: "", status: "Pending" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   if (!currentCompany) return <NoCompanyEmpty />;
@@ -60,22 +62,44 @@ function RecoverablesPage() {
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }, [data]);
 
+  const startEdit = (r: Row) => {
+    setForm({
+      client_name: r.client_name,
+      amount: String(r.amount),
+      description: r.description ?? "",
+      month: r.month ?? "",
+      paid_via: r.paid_via ?? "",
+      paid_by_name: r.paid_by_name,
+      status: r.status,
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
   const submit = async () => {
     if (!form.client_name.trim() || !form.amount || !form.paid_by_name) return toast.error("Client, amount, and 'paid by' are required");
     setBusy(true);
     try {
-      await insert({
-        client_name: form.client_name.trim(),
-        amount: Number(form.amount),
-        description: form.description || null,
-        month: form.month || null,
-        paid_via: form.paid_via || null,
-        paid_by_name: form.paid_by_name,
-        status: form.status,
-      });
-      toast.success("Recorded");
-      setForm({ client_name: "", amount: "", description: "", month: "", paid_via: "", paid_by_name: "", status: "Pending" });
-      setOpen(false);
+      await upsert(
+        {
+          client_name: form.client_name.trim(),
+          amount: Number(form.amount),
+          description: form.description || null,
+          month: form.month || null,
+          paid_via: form.paid_via || null,
+          paid_by_name: form.paid_by_name,
+          status: form.status,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Updated" : "Recorded");
+      closeForm();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
