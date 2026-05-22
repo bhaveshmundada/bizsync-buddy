@@ -137,7 +137,7 @@ function ToolsPage() {
 
       {open && canEdit && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h3 className="mb-3 text-sm font-semibold">Add tool</h3>
+          <h3 className="mb-3 text-sm font-semibold">{editingId ? "Edit tool" : "Add tool"}</h3>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div><Label>Tool name *</Label><Input value={form.tool_name} onChange={(e) => setForm({ ...form, tool_name: e.target.value })} /></div>
             <div><Label>Cost (₹) *</Label><Input type="number" value={form.monthly_cost} onChange={(e) => setForm({ ...form, monthly_cost: e.target.value })} /></div>
