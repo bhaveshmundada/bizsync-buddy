@@ -118,7 +118,7 @@ function InvoicesPage() {
 
       {open && canEdit && (
         <div className="rounded-2xl border border-gray-100 bg-white p-5">
-          <h3 className="mb-3 text-sm font-semibold">New invoice</h3>
+          <h3 className="mb-3 text-sm font-semibold">{editingId ? "Edit invoice" : "New invoice"}</h3>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div><Label>Client *</Label><Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} /></div>
             <div><Label>Project</Label><Input value={form.project_name} onChange={(e) => setForm({ ...form, project_name: e.target.value })} /></div>
