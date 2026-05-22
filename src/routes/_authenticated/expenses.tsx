@@ -32,10 +32,12 @@ function ExpensesPage() {
   const { currentCompany, canEdit } = useCompany();
   const { data = [] } = useCompanyRecords<ExpenseRow>("expenses");
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
-  const insert = useInsertRow("expenses");
+  const upsert = useUpsertRow("expenses");
 
+  const emptyForm = { description: "", amount: "", month: "", category: "", paid_by_name: "", notes: "" };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ description: "", amount: "", month: "", category: "", paid_by_name: "", notes: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   const withdrawalsByMember = useMemo(() => {
@@ -52,21 +54,42 @@ function ExpensesPage() {
   const total = data.reduce((s, r) => s + Number(r.amount ?? 0), 0);
   const isPartner = members.length > 1;
 
+  const startEdit = (r: ExpenseRow) => {
+    setForm({
+      description: r.description,
+      amount: String(r.amount),
+      month: r.month ?? "",
+      category: r.category ?? "",
+      paid_by_name: r.paid_by_name,
+      notes: r.notes ?? "",
+    });
+    setEditingId(r.id);
+    setOpen(true);
+  };
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
   const submit = async () => {
     if (!form.description.trim() || !form.amount || !form.paid_by_name) return toast.error("Description, amount, and 'who paid' are required");
     setBusy(true);
     try {
-      await insert({
-        description: form.description.trim(),
-        amount: Number(form.amount),
-        month: form.month || null,
-        category: form.category || null,
-        paid_by_name: form.paid_by_name,
-        notes: form.notes || null,
-      });
-      toast.success("Expense added");
-      setForm({ description: "", amount: "", month: "", category: "", paid_by_name: "", notes: "" });
-      setOpen(false);
+      await upsert(
+        {
+          description: form.description.trim(),
+          amount: Number(form.amount),
+          month: form.month || null,
+          category: form.category || null,
+          paid_by_name: form.paid_by_name,
+          notes: form.notes || null,
+        },
+        editingId,
+      );
+      toast.success(editingId ? "Expense updated" : "Expense added");
+      closeForm();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
