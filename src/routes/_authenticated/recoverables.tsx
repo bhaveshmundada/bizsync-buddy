@@ -124,7 +124,7 @@ function RecoverablesPage() {
       <PageHeader
         title="Client spend (recoverables)"
         subtitle="Money you spent on behalf of clients — to recover from them"
-        actions={canEdit ? <Button size="sm" onClick={() => setOpen(!open)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> Add</Button> : undefined}
+        actions={canEdit ? <Button size="sm" onClick={() => (open ? closeForm() : setOpen(true))} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="mr-1 h-3.5 w-3.5" /> Add</Button> : undefined}
       />
 
       <HintBox tone="blue">
