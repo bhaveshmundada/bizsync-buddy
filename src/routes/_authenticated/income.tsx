@@ -116,6 +116,10 @@ function IncomePage() {
         }
       />
 
+      <HintBox tone="emerald">
+        Income = money clients actually paid you. Not promises, not invoices — real money in your bank account. Only log here when the payment hits.
+      </HintBox>
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <MetricCard label="Total income" value={<Money amount={total} tone="success" />} tone="success" />
         <MetricCard label="Top client" value={topClient ? topClient[0] : "—"} sub={topClient ? <Money amount={topClient[1]} /> : null} tone="info" />
