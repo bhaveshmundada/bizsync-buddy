@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
 import { useUpsertRow, DeleteRowButton, EditRowButton } from "@/components/RowActions";
-import { FY_MONTHS, PAID_VIA_OPTIONS, RECOVERABLE_STATUSES } from "@/lib/months";
+import { FY_MONTHS, PAID_VIA_OPTIONS, RECOVERABLE_STATUSES, RECOVERABLE_CATEGORIES } from "@/lib/months";
 import { formatDate } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
 import { Plus } from "lucide-react";
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/recoverables")({
   component: RecoverablesPage,
 });
 
-type Row = { id: string; client_name: string; amount: number; description: string | null; month: string | null; paid_via: string | null; paid_by_name: string; status: string; recovery_date: string | null; added_by: string; created_at: string };
+type Row = { id: string; client_name: string; amount: number; description: string | null; category: string | null; month: string | null; paid_via: string | null; paid_by_name: string; status: string; recovery_date: string | null; added_by: string; created_at: string };
 
 function RecoverablesPage() {
   const { currentCompany, canEdit } = useCompany();
@@ -36,7 +36,7 @@ function RecoverablesPage() {
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
   const upsert = useUpsertRow("client_recoverables");
 
-  const emptyForm = { client_name: "", amount: "", description: "", month: "", paid_via: "", paid_by_name: currentCompany?.display_name ?? "", status: "Pending" };
+  const emptyForm = { client_name: "", amount: "", description: "", category: "", month: "", paid_via: "", paid_by_name: currentCompany?.display_name ?? "", status: "Pending" };
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -67,6 +67,7 @@ function RecoverablesPage() {
       client_name: r.client_name,
       amount: String(r.amount),
       description: r.description ?? "",
+      category: (r as any).category ?? "",
       month: r.month ?? "",
       paid_via: r.paid_via ?? "",
       paid_by_name: r.paid_by_name,
@@ -91,6 +92,7 @@ function RecoverablesPage() {
           client_name: form.client_name.trim(),
           amount: Number(form.amount),
           description: form.description || null,
+          category: form.category || null,
           month: form.month || null,
           paid_via: form.paid_via || null,
           paid_by_name: form.paid_by_name,
@@ -156,6 +158,13 @@ function RecoverablesPage() {
             <div><Label>Client *</Label><Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} /></div>
             <div><Label>Amount (₹) *</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
             <div className="md:col-span-2"><Label>Description</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What did you spend on?" /></div>
+            <div>
+              <Label>Category</Label>
+              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                <SelectTrigger><SelectValue placeholder="Type of spend" /></SelectTrigger>
+                <SelectContent>{RECOVERABLE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Paid by *</Label>
               <Select value={form.paid_by_name} onValueChange={(v) => setForm({ ...form, paid_by_name: v })}>
