@@ -48,8 +48,13 @@ export const EXPENSE_CATEGORIES = [
   "CA / legal",
   "Business travel",
   "Marketing & ads (own)",
+  "Facebook Ads",
+  "Google Ads",
+  "Tools / SaaS",
+  "Software & domains",
   "Founder salary",
   "Tax payment",
+  "Team meals & events",
   "Miscellaneous",
 ] as const;
 
