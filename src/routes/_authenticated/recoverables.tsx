@@ -92,6 +92,7 @@ function RecoverablesPage() {
           client_name: form.client_name.trim(),
           amount: Number(form.amount),
           description: form.description || null,
+          category: form.category || null,
           month: form.month || null,
           paid_via: form.paid_via || null,
           paid_by_name: form.paid_by_name,
