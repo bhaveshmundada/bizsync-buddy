@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/recoverables")({
   component: RecoverablesPage,
 });
 
-type Row = { id: string; client_name: string; amount: number; description: string | null; month: string | null; paid_via: string | null; paid_by_name: string; status: string; recovery_date: string | null; added_by: string; created_at: string };
+type Row = { id: string; client_name: string; amount: number; description: string | null; category: string | null; month: string | null; paid_via: string | null; paid_by_name: string; status: string; recovery_date: string | null; added_by: string; created_at: string };
 
 function RecoverablesPage() {
   const { currentCompany, canEdit } = useCompany();
