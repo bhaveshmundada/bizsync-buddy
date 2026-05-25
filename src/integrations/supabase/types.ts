@@ -28,6 +28,7 @@ export type Database = {
           month: string | null
           paid_by_name: string
           paid_via: string | null
+          receipt_url: string | null
           recovery_date: string | null
           status: string
         }
@@ -44,6 +45,7 @@ export type Database = {
           month?: string | null
           paid_by_name: string
           paid_via?: string | null
+          receipt_url?: string | null
           recovery_date?: string | null
           status?: string
         }
@@ -60,6 +62,7 @@ export type Database = {
           month?: string | null
           paid_by_name?: string
           paid_via?: string | null
+          receipt_url?: string | null
           recovery_date?: string | null
           status?: string
         }
@@ -227,6 +230,7 @@ export type Database = {
           month: string | null
           notes: string | null
           paid_by_name: string
+          receipt_url: string | null
         }
         Insert: {
           added_by: string
@@ -240,6 +244,7 @@ export type Database = {
           month?: string | null
           notes?: string | null
           paid_by_name: string
+          receipt_url?: string | null
         }
         Update: {
           added_by?: string
@@ -253,6 +258,7 @@ export type Database = {
           month?: string | null
           notes?: string | null
           paid_by_name?: string
+          receipt_url?: string | null
         }
         Relationships: [
           {
