@@ -164,7 +164,11 @@ function ExpensesPage() {
               <Select value={form.paid_by_name} onValueChange={(v) => setForm({ ...form, paid_by_name: v })}>
                 <SelectTrigger><SelectValue placeholder="Select member" /></SelectTrigger>
                 <SelectContent>
-                  {members.map((m) => <SelectItem key={m.user_id} value={m.display_name}>{m.display_name}</SelectItem>)}
+                  {members.length > 0
+                    ? members.map((m) => <SelectItem key={m.user_id} value={m.display_name}>{m.display_name}</SelectItem>)
+                    : currentCompany?.display_name
+                      ? <SelectItem value={currentCompany.display_name}>{currentCompany.display_name}</SelectItem>
+                      : null}
                   <SelectItem value="Business account">Business account</SelectItem>
                 </SelectContent>
               </Select>
