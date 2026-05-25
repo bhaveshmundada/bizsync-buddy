@@ -34,7 +34,7 @@ function ExpensesPage() {
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
   const upsert = useUpsertRow("expenses");
 
-  const emptyForm = { description: "", amount: "", month: "", category: "", paid_by_name: "", notes: "" };
+  const emptyForm = { description: "", amount: "", month: "", category: "", paid_by_name: currentCompany?.display_name ?? "", notes: "" };
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
