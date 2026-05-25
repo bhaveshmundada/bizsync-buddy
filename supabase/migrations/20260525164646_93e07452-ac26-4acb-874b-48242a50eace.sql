@@ -1,0 +1,1 @@
+ALTER TABLE public.client_recoverables ADD COLUMN IF NOT EXISTS category text;

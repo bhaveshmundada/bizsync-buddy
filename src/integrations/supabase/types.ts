@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           added_by: string
           amount: number
+          category: string | null
           client_name: string
           company_id: string
           created_at: string
@@ -33,6 +34,7 @@ export type Database = {
         Insert: {
           added_by: string
           amount: number
+          category?: string | null
           client_name: string
           company_id: string
           created_at?: string
@@ -48,6 +50,7 @@ export type Database = {
         Update: {
           added_by?: string
           amount?: number
+          category?: string | null
           client_name?: string
           company_id?: string
           created_at?: string
