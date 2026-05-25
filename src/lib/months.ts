@@ -69,6 +69,11 @@ export const RECOVERABLE_CATEGORIES = [
   "Miscellaneous",
 ] as const;
 
+export const DEFAULT_MEMBERS = [
+  "Bhavesh Mundada",
+  "Yogesh Khute",
+] as const;
+
 export const PAID_VIA_OPTIONS = [
   "Personal card",
   "Business card",

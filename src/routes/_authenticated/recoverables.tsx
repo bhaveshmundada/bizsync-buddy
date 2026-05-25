@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
 import { useUpsertRow, DeleteRowButton, EditRowButton } from "@/components/RowActions";
-import { FY_MONTHS, PAID_VIA_OPTIONS, RECOVERABLE_STATUSES, RECOVERABLE_CATEGORIES } from "@/lib/months";
+import { FY_MONTHS, PAID_VIA_OPTIONS, RECOVERABLE_STATUSES, RECOVERABLE_CATEGORIES, DEFAULT_MEMBERS } from "@/lib/months";
 import { formatDate } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
 import { Plus } from "lucide-react";
@@ -37,7 +37,7 @@ function RecoverablesPage() {
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
   const upsert = useUpsertRow("client_recoverables");
 
-  const emptyForm = { client_name: "", amount: "", description: "", category: "", month: "", paid_via: "", paid_by_name: currentCompany?.display_name ?? "", status: "Pending" };
+  const emptyForm = { client_name: "", amount: "", description: "", category: "", month: "", paid_via: "", paid_by_name: currentCompany?.display_name || "Bhavesh Mundada", status: "Pending" };
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -187,10 +187,12 @@ function RecoverablesPage() {
                 <SelectTrigger><SelectValue placeholder="Member" /></SelectTrigger>
                 <SelectContent>
                   {members.length > 0
-                    ? members.map((m) => <SelectItem key={m.user_id} value={m.display_name}>{m.display_name}</SelectItem>)
-                    : currentCompany?.display_name
-                      ? <SelectItem value={currentCompany.display_name}>{currentCompany.display_name}</SelectItem>
-                      : null}
+                    ? members.map((m) => (
+                        <SelectItem key={m.user_id} value={m.display_name}>{m.display_name}</SelectItem>
+                      ))
+                    : DEFAULT_MEMBERS.map((name) => (
+                        <SelectItem key={name} value={name}>{name}</SelectItem>
+                      ))}
                   <SelectItem value="Business account">Business account</SelectItem>
                 </SelectContent>
               </Select>
