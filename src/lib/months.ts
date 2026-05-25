@@ -58,6 +58,17 @@ export const EXPENSE_CATEGORIES = [
   "Miscellaneous",
 ] as const;
 
+export const RECOVERABLE_CATEGORIES = [
+  "Facebook Ads",
+  "Google Ads",
+  "Other Ads",
+  "Tools / SaaS",
+  "Travel (Uber/cab)",
+  "Hosting / domain",
+  "Freelancer",
+  "Miscellaneous",
+] as const;
+
 export const PAID_VIA_OPTIONS = [
   "Personal card",
   "Business card",
