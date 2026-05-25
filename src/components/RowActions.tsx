@@ -76,8 +76,9 @@ export function useUpsertRow(table: Table) {
   const { currentCompany, financialYear } = useCompany();
   const { user } = useAuth();
   const qc = useQueryClient();
-  return async (values: Record<string, unknown>, editingId: string | null) => {
+  return async (values: Record<string, unknown>, editingId: string | null): Promise<{ id: string }> => {
     if (!currentCompany || !user) throw new Error("No company");
+    let id = editingId ?? "";
     if (editingId) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from(table) as any).update(values).eq("id", editingId);
@@ -90,9 +91,11 @@ export function useUpsertRow(table: Table) {
         ...(table !== "tools_subscriptions" ? { financial_year: financialYear } : {}),
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from(table) as any).insert(payload);
+      const { data, error } = await (supabase.from(table) as any).insert(payload).select("id").single();
       if (error) throw error;
+      id = (data as { id: string }).id;
     }
     qc.invalidateQueries({ queryKey: [table] });
+    return { id };
   };
 }

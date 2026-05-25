@@ -21,24 +21,30 @@ import { Download, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { HintBox } from "@/components/HintBox";
+import { ReceiptUploader, uploadReceipt, ReceiptLink } from "@/components/ReceiptUploader";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/expenses")({
   component: ExpensesPage,
 });
 
-type ExpenseRow = { id: string; description: string; amount: number; month: string | null; category: string | null; paid_by_name: string; notes: string | null; added_by: string; created_at: string };
+type ExpenseRow = { id: string; description: string; amount: number; month: string | null; category: string | null; paid_by_name: string; notes: string | null; added_by: string; created_at: string; receipt_url: string | null };
 
 function ExpensesPage() {
   const { currentCompany, canEdit } = useCompany();
   const { data = [] } = useCompanyRecords<ExpenseRow>("expenses");
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
   const upsert = useUpsertRow("expenses");
+  const qc = useQueryClient();
 
   const emptyForm = { description: "", amount: "", month: "", category: "", paid_by_name: currentCompany?.display_name ?? "", notes: "" };
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [existingReceipt, setExistingReceipt] = useState<string | null>(null);
 
   const withdrawalsByMember = useMemo(() => {
     const m = new Map<string, number>();
@@ -63,6 +69,8 @@ function ExpensesPage() {
       paid_by_name: r.paid_by_name,
       notes: r.notes ?? "",
     });
+    setFile(null);
+    setExistingReceipt(r.receipt_url ?? null);
     setEditingId(r.id);
     setOpen(true);
   };
@@ -71,26 +79,37 @@ function ExpensesPage() {
     setOpen(false);
     setEditingId(null);
     setForm(emptyForm);
+    setFile(null);
+    setExistingReceipt(null);
   };
 
   const submit = async () => {
     if (!form.description.trim() || !form.amount || !form.paid_by_name) return toast.error("Description, amount, and 'who paid' are required");
     setBusy(true);
     try {
-      await upsert(
-        {
-          description: form.description.trim(),
-          amount: Number(form.amount),
-          month: form.month || null,
-          category: form.category || null,
-          paid_by_name: form.paid_by_name,
-          notes: form.notes || null,
-        },
-        editingId,
-      );
-      toast.success(editingId ? "Expense updated" : "Expense added");
+      const payload: Record<string, unknown> = {
+        description: form.description.trim(),
+        amount: Number(form.amount),
+        month: form.month || null,
+        category: form.category || null,
+        paid_by_name: form.paid_by_name,
+        notes: form.notes || null,
+      };
+      if (editingId) payload.receipt_url = existingReceipt;
+      const { id } = await upsert(payload, editingId);
+      if (file && currentCompany) {
+        const path = await uploadReceipt({ file, companyId: currentCompany.id, rowId: id });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("expenses") as any).update({ receipt_url: path }).eq("id", id);
+        if (error) throw error;
+        qc.invalidateQueries({ queryKey: ["expenses"] });
+        toast.success(editingId ? "Expense updated with receipt" : "Expense saved with receipt");
+      } else {
+        toast.success(editingId ? "Expense updated" : "Expense saved");
+      }
       closeForm();
     } catch (e: unknown) {
+      console.error("Save expense failed:", e);
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
       setBusy(false);
@@ -188,6 +207,15 @@ function ExpensesPage() {
               </Select>
             </div>
             <div className="md:col-span-2">
+              <Label>Attach receipt / invoice</Label>
+              <ReceiptUploader
+                file={file}
+                onFile={setFile}
+                existingUrl={existingReceipt}
+                onClearExisting={() => setExistingReceipt(null)}
+              />
+            </div>
+            <div className="md:col-span-2">
               <Label>Notes</Label>
               <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </div>
@@ -214,6 +242,7 @@ function ExpensesPage() {
                 <TableHead>Paid by</TableHead>
                 <TableHead>Added by</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="w-10"></TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -226,6 +255,7 @@ function ExpensesPage() {
                   <TableCell><MemberAvatar name={r.paid_by_name} size="xs" /></TableCell>
                   <TableCell><MemberAvatar name={memberMap.get(r.added_by) ?? "?"} size="xs" /></TableCell>
                   <TableCell className="text-right"><Money amount={r.amount} tone="danger" /></TableCell>
+                  <TableCell><ReceiptLink path={r.receipt_url} /></TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
                       <EditRowButton onClick={() => startEdit(r)} />

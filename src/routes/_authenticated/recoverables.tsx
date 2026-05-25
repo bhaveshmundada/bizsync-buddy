@@ -22,12 +22,13 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { HintBox } from "@/components/HintBox";
+import { ReceiptUploader, uploadReceipt, ReceiptLink } from "@/components/ReceiptUploader";
 
 export const Route = createFileRoute("/_authenticated/recoverables")({
   component: RecoverablesPage,
 });
 
-type Row = { id: string; client_name: string; amount: number; description: string | null; category: string | null; month: string | null; paid_via: string | null; paid_by_name: string; status: string; recovery_date: string | null; added_by: string; created_at: string };
+type Row = { id: string; client_name: string; amount: number; description: string | null; category: string | null; month: string | null; paid_via: string | null; paid_by_name: string; status: string; recovery_date: string | null; added_by: string; created_at: string; receipt_url: string | null };
 
 function RecoverablesPage() {
   const { currentCompany, canEdit } = useCompany();
@@ -41,6 +42,8 @@ function RecoverablesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [existingReceipt, setExistingReceipt] = useState<string | null>(null);
 
   if (!currentCompany) return <NoCompanyEmpty />;
   const memberMap = new Map(members.map((m) => [m.user_id, m.display_name]));
@@ -73,6 +76,8 @@ function RecoverablesPage() {
       paid_by_name: r.paid_by_name,
       status: r.status,
     });
+    setFile(null);
+    setExistingReceipt(r.receipt_url ?? null);
     setEditingId(r.id);
     setOpen(true);
   };
@@ -81,28 +86,39 @@ function RecoverablesPage() {
     setOpen(false);
     setEditingId(null);
     setForm(emptyForm);
+    setFile(null);
+    setExistingReceipt(null);
   };
 
   const submit = async () => {
     if (!form.client_name.trim() || !form.amount || !form.paid_by_name) return toast.error("Client, amount, and 'paid by' are required");
     setBusy(true);
     try {
-      await upsert(
-        {
-          client_name: form.client_name.trim(),
-          amount: Number(form.amount),
-          description: form.description || null,
-          category: form.category || null,
-          month: form.month || null,
-          paid_via: form.paid_via || null,
-          paid_by_name: form.paid_by_name,
-          status: form.status,
-        },
-        editingId,
-      );
-      toast.success(editingId ? "Updated" : "Recorded");
+      const payload: Record<string, unknown> = {
+        client_name: form.client_name.trim(),
+        amount: Number(form.amount),
+        description: form.description || null,
+        category: form.category || null,
+        month: form.month || null,
+        paid_via: form.paid_via || null,
+        paid_by_name: form.paid_by_name,
+        status: form.status,
+      };
+      if (editingId) payload.receipt_url = existingReceipt;
+      const { id } = await upsert(payload, editingId);
+      if (file && currentCompany) {
+        const path = await uploadReceipt({ file, companyId: currentCompany.id, rowId: id });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("client_recoverables") as any).update({ receipt_url: path }).eq("id", id);
+        if (error) throw error;
+        qc.invalidateQueries({ queryKey: ["client_recoverables"] });
+        toast.success(editingId ? "Updated with receipt" : "Recorded with receipt");
+      } else {
+        toast.success(editingId ? "Updated" : "Recorded");
+      }
       closeForm();
     } catch (e: unknown) {
+      console.error("Save recoverable failed:", e);
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
       setBusy(false);
@@ -200,6 +216,15 @@ function RecoverablesPage() {
                 <SelectContent>{RECOVERABLE_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            <div className="md:col-span-2">
+              <Label>Attach receipt / invoice</Label>
+              <ReceiptUploader
+                file={file}
+                onFile={setFile}
+                existingUrl={existingReceipt}
+                onClearExisting={() => setExistingReceipt(null)}
+              />
+            </div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="outline" onClick={closeForm}>Cancel</Button>
@@ -223,6 +248,7 @@ function RecoverablesPage() {
                 <TableHead>Paid by</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="w-10"></TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -244,6 +270,7 @@ function RecoverablesPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right"><Money amount={r.amount} /></TableCell>
+                  <TableCell><ReceiptLink path={r.receipt_url} /></TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
                       <EditRowButton onClick={() => startEdit(r)} />
