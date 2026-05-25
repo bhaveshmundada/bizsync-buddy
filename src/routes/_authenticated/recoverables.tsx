@@ -216,6 +216,15 @@ function RecoverablesPage() {
                 <SelectContent>{RECOVERABLE_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            <div className="md:col-span-2">
+              <Label>Attach receipt / invoice</Label>
+              <ReceiptUploader
+                file={file}
+                onFile={setFile}
+                existingUrl={existingReceipt}
+                onClearExisting={() => setExistingReceipt(null)}
+              />
+            </div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="outline" onClick={closeForm}>Cancel</Button>
@@ -239,6 +248,7 @@ function RecoverablesPage() {
                 <TableHead>Paid by</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="w-10"></TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -260,6 +270,7 @@ function RecoverablesPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right"><Money amount={r.amount} /></TableCell>
+                  <TableCell><ReceiptLink path={r.receipt_url} /></TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
                       <EditRowButton onClick={() => startEdit(r)} />
