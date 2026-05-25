@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompanyRecords } from "@/hooks/useCompanyRecords";
 import { useUpsertRow, DeleteRowButton, EditRowButton } from "@/components/RowActions";
-import { FY_MONTHS, PAID_VIA_OPTIONS, RECOVERABLE_STATUSES } from "@/lib/months";
+import { FY_MONTHS, PAID_VIA_OPTIONS, RECOVERABLE_STATUSES, RECOVERABLE_CATEGORIES } from "@/lib/months";
 import { formatDate } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
 import { Plus } from "lucide-react";
