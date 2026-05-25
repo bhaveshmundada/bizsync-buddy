@@ -207,6 +207,15 @@ function ExpensesPage() {
               </Select>
             </div>
             <div className="md:col-span-2">
+              <Label>Attach receipt / invoice</Label>
+              <ReceiptUploader
+                file={file}
+                onFile={setFile}
+                existingUrl={existingReceipt}
+                onClearExisting={() => setExistingReceipt(null)}
+              />
+            </div>
+            <div className="md:col-span-2">
               <Label>Notes</Label>
               <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </div>
@@ -233,6 +242,7 @@ function ExpensesPage() {
                 <TableHead>Paid by</TableHead>
                 <TableHead>Added by</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="w-10"></TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -245,6 +255,7 @@ function ExpensesPage() {
                   <TableCell><MemberAvatar name={r.paid_by_name} size="xs" /></TableCell>
                   <TableCell><MemberAvatar name={memberMap.get(r.added_by) ?? "?"} size="xs" /></TableCell>
                   <TableCell className="text-right"><Money amount={r.amount} tone="danger" /></TableCell>
+                  <TableCell><ReceiptLink path={r.receipt_url} /></TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
                       <EditRowButton onClick={() => startEdit(r)} />
