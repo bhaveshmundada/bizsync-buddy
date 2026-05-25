@@ -159,6 +159,13 @@ function RecoverablesPage() {
             <div><Label>Amount (₹) *</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
             <div className="md:col-span-2"><Label>Description</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What did you spend on?" /></div>
             <div>
+              <Label>Category</Label>
+              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                <SelectTrigger><SelectValue placeholder="Type of spend" /></SelectTrigger>
+                <SelectContent>{RECOVERABLE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>Paid by *</Label>
               <Select value={form.paid_by_name} onValueChange={(v) => setForm({ ...form, paid_by_name: v })}>
                 <SelectTrigger><SelectValue placeholder="Member" /></SelectTrigger>
