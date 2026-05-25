@@ -36,7 +36,7 @@ function RecoverablesPage() {
   const { data: members = [] } = useCompanyRecords<{ user_id: string; display_name: string }>("company_members", { fyScoped: false });
   const upsert = useUpsertRow("client_recoverables");
 
-  const emptyForm = { client_name: "", amount: "", description: "", month: "", paid_via: "", paid_by_name: currentCompany?.display_name ?? "", status: "Pending" };
+  const emptyForm = { client_name: "", amount: "", description: "", category: "", month: "", paid_via: "", paid_by_name: currentCompany?.display_name ?? "", status: "Pending" };
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -67,6 +67,7 @@ function RecoverablesPage() {
       client_name: r.client_name,
       amount: String(r.amount),
       description: r.description ?? "",
+      category: (r as any).category ?? "",
       month: r.month ?? "",
       paid_via: r.paid_via ?? "",
       paid_by_name: r.paid_by_name,
